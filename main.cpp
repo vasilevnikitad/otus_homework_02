@@ -1,61 +1,40 @@
+#include "ip_filter.hpp"
+
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#if 0 /* Comlilers don't support it :/ */
+#include <execution>
+#endif
 #include <iostream>
 #include <string>
 #include <vector>
 
-// ("",  '.') -> [""]
-// ("11", '.') -> ["11"]
-// ("..", '.') -> ["", "", ""]
-// ("11.", '.') -> ["11", ""]
-// (".11", '.') -> ["", "11"]
-// ("11.22", '.') -> ["11", "22"]
-std::vector<std::string> split(const std::string &str, char d)
-{
-    std::vector<std::string> r;
-
-    std::string::size_type start = 0;
-    std::string::size_type stop = str.find_first_of(d);
-    while(stop != std::string::npos)
-    {
-        r.push_back(str.substr(start, stop - start));
-
-        start = stop + 1;
-        stop = str.find_first_of(d, start);
-    }
-
-    r.push_back(str.substr(start));
-
-    return r;
-}
-
 int main(int, char const *[]) try
 {
-    std::vector<std::vector<std::string>> ip_pool;
+  std::vector<ip_filter::ip> ip_pool;
 
-    for(std::string line; std::getline(std::cin, line);)
-    {
-        std::vector<std::string> v = split(line, '\t');
-        ip_pool.push_back(split(v.at(0), '.'));
-    }
+  for(std::string line; std::getline(std::cin, line); )
+    ip_pool.emplace_back(line.substr(0, line.find('\t')));
 
-    // TODO reverse lexicographically sort
+  std::sort(std::begin(ip_pool),
+            std::end(ip_pool),
+            std::greater<ip_filter::ip>());
 
-    for(std::vector<std::vector<std::string> >::const_iterator ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
-    {
-        for(std::vector<std::string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
-        {
-            if (ip_part != ip->cbegin())
-            {
-                std::cout << ".";
+  for(auto const &ip: ip_pool)
+    std::cout << ip << std::endl;
 
-            }
-            std::cout << *ip_part;
-        }
-        std::cout << std::endl;
-    }
-    return 0;
+  for(auto const &ip: ip_filter::filter{1}.get_filtered_ip(ip_pool))
+    std::cout << ip << std::endl;
+
+  for(auto const &ip: ip_filter::filter{46, 70}.get_filtered_ip(ip_pool))
+    std::cout << ip << std::endl;
+
+  for(auto const &ip: ip_filter::filter_any{46}.get_filtered_ip(ip_pool))
+    std::cout << ip << std::endl;
+
+  return EXIT_SUCCESS;
 } catch(std::exception const &e) {
-    std::cerr << e.what() << std::endl;
+    std::cerr << "Exception: "<< e.what() << std::endl;
     return EXIT_FAILURE;
 }
