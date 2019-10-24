@@ -1,61 +1,53 @@
-#include <cassert>
-#include <cstdlib>
-#include <iostream>
+#include "ip_filter.hpp"
+
+#include <algorithm>
+#include <array>
+#include <exception>
+#include <initializer_list>
+#include <istream>
+#include <stdint.h>
 #include <string>
-#include <vector>
+#include <string_view>
 
-// ("",  '.') -> [""]
-// ("11", '.') -> ["11"]
-// ("..", '.') -> ["", "", ""]
-// ("11.", '.') -> ["11", ""]
-// (".11", '.') -> ["", "11"]
-// ("11.22", '.') -> ["11", "22"]
-std::vector<std::string> split(const std::string &str, char d)
-{
-    std::vector<std::string> r;
+#include <iostream>
+namespace ip_filter {
 
-    std::string::size_type start = 0;
-    std::string::size_type stop = str.find_first_of(d);
-    while(stop != std::string::npos)
-    {
-        r.push_back(str.substr(start, stop - start));
 
-        start = stop + 1;
-        stop = str.find_first_of(d, start);
+  ip::ip(const std::string &ip_str)
+  {
+    int pos;
+    std::array<unsigned, 4> val_le;
+    if (std::sscanf(ip_str.c_str(), "%u.%u.%u.%u%n",
+          &val_le[3], &val_le[2], &val_le[1], &val_le[0], &pos) != 4 ||
+        pos != ip_str.length() ||
+        std::any_of(std::begin(val_le),
+                    std::end(val_le),
+                    [](unsigned const val){return val > 0xFF;})) {
+      throw std::invalid_argument{"Argument doesn't contain valid ipv4 string"};
     }
 
-    r.push_back(str.substr(start));
+    if constexpr (is_le_host_order())
+      std::move(std::begin(val_le), std::end(val_le), std::begin(address));
+    else
+      std::move_backward(std::begin(val_le), std::end(val_le), std::end(address));
+  }
 
-    return r;
+  std::ostream& operator << (std::ostream &out, ip const &ip)
+  {
+    return out << std::to_string(ip);
+  }
 }
 
-int main(int, char const *[]) try
-{
-    std::vector<std::vector<std::string>> ip_pool;
-
-    for(std::string line; std::getline(std::cin, line);)
-    {
-        std::vector<std::string> v = split(line, '\t');
-        ip_pool.push_back(split(v.at(0), '.'));
+namespace std {
+  string to_string(ip_filter::ip const &ip)
+  {
+    if constexpr (ip_filter::is_be_host_order()) {
+      return std::to_string(ip[0]) + '.' + std::to_string(ip[1]) + '.' +
+             std::to_string(ip[2]) + '.' + std::to_string(ip[3]);
+    } else {
+      return std::to_string(ip[3]) + '.' + std::to_string(ip[2]) + '.' +
+             std::to_string(ip[1]) + '.' + std::to_string(ip[0]);
     }
 
-    // TODO reverse lexicographically sort
-
-    for(std::vector<std::vector<std::string> >::const_iterator ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
-    {
-        for(std::vector<std::string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
-        {
-            if (ip_part != ip->cbegin())
-            {
-                std::cout << ".";
-
-            }
-            std::cout << *ip_part;
-        }
-        std::cout << std::endl;
-    }
-    return 0;
-} catch(std::exception const &e) {
-    std::cerr << e.what() << std::endl;
-    return EXIT_FAILURE;
+  }
 }
