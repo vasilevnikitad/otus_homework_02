@@ -3,26 +3,22 @@
 #include <algorithm>
 #include <array>
 #include <exception>
-#include <initializer_list>
-#include <istream>
-#include <stdint.h>
+#include <limits>
 #include <string>
-#include <string_view>
 
-#include <iostream>
 namespace ip_filter {
 
 
   ip::ip(const std::string &ip_str)
   {
-    int pos;
-    std::array<unsigned, 4> val_le;
+    int pos{0};
+    std::array<unsigned, IPV4_OCTET_CNT> val_le;
     if (std::sscanf(ip_str.c_str(), "%u.%u.%u.%u%n",
           &val_le[3], &val_le[2], &val_le[1], &val_le[0], &pos) != 4 ||
-        pos != ip_str.length() ||
+        (unsigned)pos != ip_str.length() ||
         std::any_of(std::begin(val_le),
                     std::end(val_le),
-                    [](unsigned const val){return val > 0xFF;})) {
+                    [](unsigned const val){return val > std::numeric_limits<octet_t>::max();})) {
       throw std::invalid_argument{"Argument doesn't contain valid ipv4 string"};
     }
 
@@ -41,13 +37,8 @@ namespace ip_filter {
 namespace std {
   string to_string(ip_filter::ip const &ip)
   {
-    if constexpr (ip_filter::is_be_host_order()) {
-      return std::to_string(ip[0]) + '.' + std::to_string(ip[1]) + '.' +
-             std::to_string(ip[2]) + '.' + std::to_string(ip[3]);
-    } else {
-      return std::to_string(ip[3]) + '.' + std::to_string(ip[2]) + '.' +
-             std::to_string(ip[1]) + '.' + std::to_string(ip[0]);
-    }
+    return std::to_string(ip[0]) + '.' + std::to_string(ip[1]) + '.' +
+           std::to_string(ip[2]) + '.' + std::to_string(ip[3]);
 
   }
 }

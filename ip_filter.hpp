@@ -8,7 +8,7 @@ namespace ip_filter {
 
   constexpr bool is_be_host_order()
   {
-    return static_cast<uint8_t>(uint16_t{0x1}) == 0x00;
+    return static_cast<std::uint8_t>(uint16_t{0x1}) == 0x00;
   }
 
   constexpr bool is_le_host_order()
@@ -18,18 +18,22 @@ namespace ip_filter {
 
   class ip {
     private:
-      std::array<uint8_t, 4> address;
+      using octet_t = std::uint8_t;
+      static constexpr uint8_t IPV4_OCTET_CNT{4};
+
+      std::array<octet_t, IPV4_OCTET_CNT> address;
       friend std::ostream& operator << (std::ostream &, ip const &);
 
     public:
+
       ip() noexcept(true);
 
       explicit ip(const std::string &);
 
       template<typename... Args,
                typename = std::enable_if_t<std::conjunction_v<std::is_integral<Args>...> &&
-                 sizeof...(Args) <= 4> >
-      constexpr ip(Args&&... args) : address{std::forward<uint8_t>(args)...}
+                 sizeof...(Args) <= IPV4_OCTET_CNT> >
+      constexpr ip(Args&&... args) : address{std::forward<octet_t>(args)...}
       {
         /*FIXME: I wanted a constexpr ctor but if the host machine is a little endian then
          * there is a problem with input args ordering. I didn't want to make too much
@@ -38,11 +42,21 @@ namespace ip_filter {
           std::reverse(std::begin(address), std::end(address));
       }
 
-      constexpr uint8_t const &operator[](std::size_t idx) const
-      { return address[idx]; }
+      constexpr octet_t const &operator[](std::size_t idx) const
+      {
+        if( is_le_host_order() )
+          idx = (IPV4_OCTET_CNT - 1) - idx;
 
-      constexpr uint8_t &operator[](std::size_t idx)
-      { return address[idx]; }
+        return address[idx];
+      }
+
+      constexpr octet_t &operator[](std::size_t idx)
+      {
+        if( is_le_host_order() )
+          idx = (IPV4_OCTET_CNT - 1) - idx;
+
+        return address[idx];
+      }
 
       constexpr operator uint32_t() const
       {
@@ -52,67 +66,30 @@ namespace ip_filter {
 
   };
 
+  template<typename Filter_fn,
+           typename = std::enable_if_t<std::is_invocable_r<bool,
+                                                           Filter_fn,
+                                                           ip const&>::value>>
   class filter {
     private:
-      ip ip_addr;
-      ip ip_mask;
-    public:
-      template<typename... Args>
-      constexpr filter(Args&&... args)
-      : ip_addr{std::forward<uint8_t>(args)...},
-        ip_mask{0xFF | std::forward<uint8_t>(args)...}
-      { }
+      Filter_fn is_passed;
 
-      /* FIXME: rename */
-      inline bool is_valid(ip const &ip_addr_in) const
-      {
-        /*TODO: remove brackets if not needed */
-        return (ip_addr & ip_mask) == (ip_addr_in & ip_mask);
-      }
+    public:
+      /*FIXME: How to use template in this situation? */
+      filter(Filter_fn &&fun) : is_passed{fun} { };
+      filter(Filter_fn &fun) : is_passed{fun} { };
 
       template<typename Container>
-      inline auto get_filtered_ip(Container &&in)
+      inline auto operator() (Container &&in)
       {
-        std::remove_reference_t<decltype(in)> out;
+        using ContainerType = std::decay_t<Container>;
+
+        ContainerType out;
 
         std::copy_if(std::begin(in),
                      std::end(in),
-                     std::back_insert_iterator<decltype(out)>(out),
-                     [&](ip const &ip_addr){ return is_valid(ip_addr); });
-
-        return out;
-      }
-
-
-  };
-
-  class filter_any {
-    protected:
-      uint8_t filter_octet{0};
-
-    public:
-      constexpr filter_any(uint8_t const value) : filter_octet{value}
-      { }
-
-      /* FIXME: rename */
-      inline bool is_valid(ip const &ip_addr) const
-      {
-        return ip_addr[0] == filter_octet ||
-               ip_addr[1] == filter_octet ||
-               ip_addr[2] == filter_octet ||
-               ip_addr[3] == filter_octet;
-      }
-
-      template<typename Container>
-      inline auto get_filtered_ip(Container &&in)
-      {
-        std::remove_reference_t<decltype(in)> out;
-
-        std::copy_if(std::begin(in),
-                     std::end(in),
-                     std::back_insert_iterator<decltype(out)>(out),
-                     [&](ip const &ip_addr){ return is_valid(ip_addr); });
-
+                     std::back_insert_iterator<ContainerType>(out),
+                     is_passed);
         return out;
       }
   };

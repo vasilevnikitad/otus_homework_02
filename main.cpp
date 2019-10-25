@@ -2,13 +2,21 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdlib>
-#if 0 /* Comlilers don't support it :/ */
-#include <execution>
-#endif
 #include <iostream>
 #include <string>
 #include <vector>
+
+template<typename C>
+void apply_filters(C&& c){};
+
+template<typename C, typename Arg, typename ...Args>
+void apply_filters(C&& c, Arg&& arg, Args&&... args) {
+
+  for(auto const& ip: ip_filter::filter{std::forward<Arg>(arg)}(std::forward<C>(c)))
+    std::cout << ip << '\n';
+
+  apply_filters(std::forward<C>(c), std::forward<Args>(args)...);
+}
 
 int main(int, char const *[]) try
 {
@@ -17,21 +25,15 @@ int main(int, char const *[]) try
   for(std::string line; std::getline(std::cin, line); )
     ip_pool.emplace_back(line.substr(0, line.find('\t')));
 
-  std::sort(std::begin(ip_pool),
-            std::end(ip_pool),
-            std::greater<ip_filter::ip>());
+  std::sort(std::begin(ip_pool), std::end(ip_pool), std::greater<ip_filter::ip>());
 
-  for(auto const &ip: ip_pool)
-    std::cout << ip << std::endl;
-
-  for(auto const &ip: ip_filter::filter{1}.get_filtered_ip(ip_pool))
-    std::cout << ip << std::endl;
-
-  for(auto const &ip: ip_filter::filter{46, 70}.get_filtered_ip(ip_pool))
-    std::cout << ip << std::endl;
-
-  for(auto const &ip: ip_filter::filter_any{46}.get_filtered_ip(ip_pool))
-    std::cout << ip << std::endl;
+  apply_filters(ip_pool,
+      [](ip_filter::ip const &ip){return true;},
+      [](ip_filter::ip const &ip){return ip[0] == 1;},
+      [](ip_filter::ip const &ip){return ip[0] == 46 && ip[1] == 70;},
+      [](ip_filter::ip const &ip){return ip[0] == 46 || ip[1] == 46 ||
+                                         ip[2] == 46 || ip[3] == 46;}
+      );
 
   return EXIT_SUCCESS;
 } catch(std::exception const &e) {
