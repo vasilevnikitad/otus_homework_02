@@ -8,9 +8,10 @@
 #include <vector>
 
 using octet_t = std::uint8_t;
-enum : std::uint8_t { IPV4_OCTET_CNT = 4 };
+enum : octet_t { IPV4_OCTET_CNT = 4 };
+using ip_base = std::array<octet_t, IPV4_OCTET_CNT>;
 
-class ip : public std::array<octet_t, IPV4_OCTET_CNT> {
+class ip : public ip_base {
   private:
 
     inline friend std::ostream& operator << (std::ostream &out, ip const &ip)
@@ -23,7 +24,7 @@ class ip : public std::array<octet_t, IPV4_OCTET_CNT> {
       return out;
     }
 
-    static std::array<octet_t, IPV4_OCTET_CNT> get(const std::string &ip_str) {
+    static ip_base get(const std::string &ip_str) {
       int pos{0};
       std::array<unsigned, IPV4_OCTET_CNT> val_be{{0, 0, 0, 0}};
       if (std::sscanf(ip_str.c_str(), "%u.%u.%u.%u%n",
@@ -46,9 +47,9 @@ class ip : public std::array<octet_t, IPV4_OCTET_CNT> {
     template<typename... Args,
       typename = std::enable_if_t<std::conjunction_v<std::is_integral<Args>...> &&
         sizeof...(Args) <= IPV4_OCTET_CNT> >
-        constexpr ip(Args&&... args) : std::array<octet_t, IPV4_OCTET_CNT>{std::forward<octet_t>(args)...} { }
+        constexpr ip(Args&&... args) : ip_base{std::forward<octet_t>(args)...} { }
 
-    ip(const std::string &ip_str) : std::array<octet_t, IPV4_OCTET_CNT>{get(ip_str)} { }
+    ip(const std::string &ip_str) : ip_base{get(ip_str)} { }
 };
 
 template <typename InputIt, typename OutputIt, typename ...Args,
