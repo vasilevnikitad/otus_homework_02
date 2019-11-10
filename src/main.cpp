@@ -24,4 +24,7 @@ int main(int, char const *[]) try
 } catch(std::exception const &e) {
     std::cerr << "Exception: "<< e.what() << std::endl;
     return EXIT_FAILURE;
+} catch(...) {
+    std::cerr << "Unknown Failure" << std::endl;
+    return EXIT_FAILURE;
 }
