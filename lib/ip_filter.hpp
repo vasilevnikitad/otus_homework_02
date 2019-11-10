@@ -34,7 +34,7 @@ namespace ip_filter {
             std::any_of(std::begin(val_be),
               std::end(val_be),
               [](unsigned const val){return val > std::numeric_limits<octet_t>::max();})) {
-          throw std::invalid_argument{"Argument doesn't contain valid ipv4 string"};
+          throw std::invalid_argument{"string \"" + ip_str + "\" doesn't contain valid ipv4 address"};
         }
         return {
           static_cast<octet_t>(val_be[0]),
