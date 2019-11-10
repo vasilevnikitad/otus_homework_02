@@ -30,6 +30,8 @@ BOOST_AUTO_TEST_CASE(trivial_data) try {
                                                      std::end(ip),
                                                      [](ip_filter::octet_t v){return v == 46;});}
       );
+
+  //TODO: comparsion
 } catch(std::ios_base::failure const& e) {
   BOOST_FAIL(e.what());
 } catch(std::exception const &e) {
