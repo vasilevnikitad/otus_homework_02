@@ -16,9 +16,10 @@ BOOST_AUTO_TEST_CASE(trivial_data) try {
   std::ifstream is{"trivial_data_input.txt"};
 
   if (!is)
-    throw std::exception{"Input file doesn't exist"};
+    throw std::ios_base::failure{"Cannot open file for reading"};
 
   std::stringstream ss;
+
   ip_filter::filter_pipe(
       is,
       ss,
