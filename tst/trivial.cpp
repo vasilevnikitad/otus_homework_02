@@ -43,8 +43,6 @@ BOOST_AUTO_TEST_CASE(trivial_data) try {
         std::istream_iterator<std::string>(filter_data_stream)
       )
   );
-} catch(std::ios_base::failure const& e) {
-  BOOST_FAIL(e.what());
 } catch(std::exception const &e) {
   BOOST_FAIL(e.what());
 } catch(...) {
