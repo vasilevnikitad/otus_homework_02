@@ -66,8 +66,14 @@ namespace ip_filter {
   {
     std::vector<ip> ip_pool;
 
-    for(std::string line; std::getline(std::forward<IS>(is), line); )
-      ip_pool.emplace_back(line.substr(0, line.find('\t')));
+    try {
+      for(std::string line; std::getline(std::forward<IS>(is), line); )
+        ip_pool.emplace_back(line.substr(0, line.find('\t')));
+    } catch(std::ios_base::failure const &) {
+        /* getline doesn't tell what has triggered an exception:
+         * no chars or the stream has been corrupted you will not guess
+         */
+    }
 
     std::sort(std::begin(ip_pool), std::end(ip_pool), std::greater<ip>());
 
