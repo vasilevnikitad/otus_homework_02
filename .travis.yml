@@ -7,7 +7,7 @@ addons:
     packages:
     - libboost-test-dev
     - libboost-log-dev
-    - g++-8.0
+    - g++
 script:
 - cmake .
 - cmake --build .
