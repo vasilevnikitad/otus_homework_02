@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(ipfilter_pkj)
+project(ipfilter_pkg)
 
 set(CPACK_GENERATOR                       DEB)
 set(CPACK_DEB_COMPONENT_INSTALL           ON)
