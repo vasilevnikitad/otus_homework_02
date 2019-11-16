@@ -22,4 +22,5 @@ set_target_properties(
 install(
     TARGETS ipfilter
         RUNTIME DESTINATION bin
+        COMPONENT prog
 )
