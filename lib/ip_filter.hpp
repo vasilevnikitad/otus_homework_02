@@ -14,16 +14,6 @@ namespace ip_filter {
   class ip : public ip_base {
     private:
 
-      inline friend std::ostream& operator << (std::ostream &out, ip const &ip)
-      {
-        bool dot{false};
-
-        for (auto const &octet: ip)
-          out << (dot ? "." : (dot = true, "")) << +octet;
-
-        return out;
-      }
-
       static inline ip_base str2ip_base(const std::string &ip_str)
       {
         int pos{0};
@@ -52,6 +42,14 @@ namespace ip_filter {
 
       ip(const std::string &ip_str) : ip_base{str2ip_base(ip_str)} { }
   };
+
+  template<std::size_t N = 0>
+  inline std::ostream &operator <<(std::ostream &o, ip const &ip) {
+    o << +ip[N];
+    if constexpr (N != IPV4_OCTET_CNT - 1)
+      return operator<< <N + 1>(o << '.', ip);
+    return o;
+  }
 
   template <typename InputIt, typename OutputIt, typename ...Args,
     typename = std::enable_if_t<std::conjunction_v<std::is_invocable_r<bool, Args, ip const &>...>>>
