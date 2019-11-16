@@ -4,6 +4,7 @@
 #include <array>
 #include <iostream>
 #include <iterator>
+#include <type_traits>
 #include <vector>
 
 namespace ip_filter {
