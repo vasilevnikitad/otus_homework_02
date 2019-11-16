@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(ipfilter_pkg)
+project(ipfilter_pkg
+        VERSION ${PROJECT_VERSION})
 
 set(CPACK_GENERATOR                       DEB)
 set(CPACK_DEB_COMPONENT_INSTALL           ON)
 set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS        ON)
+set(CPACK_DEBIAN_PROG_PACKAGE_DEPENDS     ipfilter-lib)
 set(CPACK_DEBIAN_FILE_NAME                DEB-DEFAULT)
 
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
