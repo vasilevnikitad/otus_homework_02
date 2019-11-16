@@ -3,7 +3,6 @@ language: cpp
 compiler: clang
 addons:
   apt:
-    update: true
     packages:
     - libboost-test-dev
     - libboost-log-dev
