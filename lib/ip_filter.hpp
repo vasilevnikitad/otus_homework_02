@@ -78,7 +78,7 @@ namespace ip_filter {
 
     apply_filters(std::begin(ip_pool), std::end(ip_pool),
                   std::ostream_iterator<ip>(std::forward<OS>(os), "\n"),
-                  filters...);
+                  std::forward<Filters>(filters)...);
   }
 }
 
