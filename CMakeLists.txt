@@ -7,7 +7,7 @@ if ("${PROJECT_BUILD_NUMBER}" STREQUAL "")
 endif ("${PROJECT_BUILD_NUMBER}" STREQUAL "")
 
 project(
-    ipfilter
+    ip_filter
         VERSION 0.0.${PROJECT_BUILD_NUMBER}
         LANGUAGES CXX
 )
